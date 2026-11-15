@@ -49,7 +49,7 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -80,7 +80,7 @@ jobs:
         run: |
           cd ffmpeg/jni
           chmod +x build-ffmpeg.sh rebuild-ffmpeg.sh
-          ./build-ffmpeg.sh ${{ matrix.arch }} 2>&1 | tee build-${{ matrix.arch }}.log
+          ./build-ffmpeg.sh \( {{ matrix.arch }} 2>&1 | tee build- \){{ matrix.arch }}.log
           if [ $? -ne 0 ]; then
             echo "Build failed for ${{ matrix.arch }}"
             exit 1
@@ -109,10 +109,10 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
 
@@ -136,7 +136,7 @@ jobs:
 
       - name: Generate checksum
         run: |
-          sha256sum mx-ffmpeg-codec-${{ github.run_id }}.zip > mx-ffmpeg-codec-${{ github.run_id }}.zip.sha256
+          sha256sum mx-ffmpeg-codec-\( {{ github.run_id }}.zip > mx-ffmpeg-codec- \){{ github.run_id }}.zip.sha256
 
       - name: Upload package
         uses: actions/upload-artifact@v7
@@ -156,15 +156,15 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download package
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: mx-ffmpeg-codec-package
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: release-${{ github.run_number }}
           name: MX FFmpeg Codec Build #${{ github.run_number }}
