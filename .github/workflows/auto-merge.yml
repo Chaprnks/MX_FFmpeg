@@ -1,0 +1,92 @@
+name: Auto-Merge Upstream Updates
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+  workflow_dispatch:
+
+jobs:
+  check-upstream:
+    runs-on: ubuntu-latest
+    outputs:
+      has-updates: ${{ steps.check.outputs.has-updates }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for updates
+        id: check
+        run: |
+          git remote add upstream https://github.com/USBhost/MX_FFmpeg.git || true
+          git fetch upstream master
+          
+          LOCAL=$(git rev-parse origin/master)
+          UPSTREAM=$(git rev-parse upstream/master)
+          
+          if [ "$LOCAL" != "$UPSTREAM" ]; then
+            echo "has-updates=true" >> $GITHUB_OUTPUT
+          else
+            echo "has-updates=false" >> $GITHUB_OUTPUT
+          fi
+
+  merge:
+    needs: check-upstream
+    runs-on: ubuntu-latest
+    if: needs.check-upstream.outputs.has-updates == 'true'
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "GitHub Actions Bot"
+
+      - name: Merge upstream
+        run: |
+          git remote add upstream https://github.com/USBhost/MX_FFmpeg.git || true
+          git fetch upstream master
+          git checkout -b auto/merge-upstream origin/master
+          
+          git merge --no-ff upstream/master \
+            -m "Merge: Sync with upstream USBhost/MX_FFmpeg" || {
+            echo "CONFLICT=true" >> $GITHUB_ENV
+            git merge --abort
+          }
+
+      - name: Push and create PR
+        run: |
+          if [ "${{ env.CONFLICT }}" == "true" ]; then
+            TITLE="⚠️ Merge: Conflicts detected"
+            BODY="Manual merge required - conflicts detected"
+          else
+            TITLE="⬆️ Merge: Upstream sync"
+            BODY="Automatic upstream merge"
+          fi
+          
+          git push -u origin auto/merge-upstream
+          echo "TITLE=$TITLE" >> $GITHUB_ENV
+          echo "BODY=$BODY" >> $GITHUB_ENV
+
+      - name: Create PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: "${{ env.TITLE }}",
+              body: "${{ env.BODY }}",
+              head: "auto/merge-upstream",
+              base: "master",
+              labels: ["automatic", "upstream-sync"]
+            })
