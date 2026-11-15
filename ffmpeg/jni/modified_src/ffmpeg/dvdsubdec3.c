@@ -40,9 +40,13 @@ struct DVDSubContext2
 	struct Entry		   *entries;		// palette cache entry.
 };
 
+#if !defined(__cplusplus) && (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 202311L)
 typedef uint8_t bool;
 static const bool true = 1;
 static const bool false = 0;
+#else
+#include <stdbool.h>
+#endif
 
 /*
  * dvdalpha has range of 0 - 15.

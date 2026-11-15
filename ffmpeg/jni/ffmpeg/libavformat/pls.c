@@ -39,13 +39,6 @@ typedef struct PLSContext {
     AVFormatContext *ctx;
 } PLSContext;
 
-static int ff_get_chomp_line(AVIOContext *s, char *buf, int maxlen)
-{
-    int len = ff_get_line(s, buf, maxlen);
-    while (len > 0 && av_isspace(buf[len - 1]))
-        buf[--len] = '\0';
-    return len;
-}
 
 static int parse_playlist(PLSContext *c, AVIOContext *in)
 {
@@ -187,7 +180,7 @@ static int pls_read_seek(AVFormatContext *s, int stream_index,
     return ret;
 }
 
-static int pls_probe(AVProbeData *p)
+static int pls_probe(const AVProbeData *p)
 {
     if (strncmp(p->buf, "[playlist]", 10))
         return 0;

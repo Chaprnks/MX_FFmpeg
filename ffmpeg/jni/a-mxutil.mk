@@ -286,6 +286,8 @@ LOCAL_CFLAGS := \
 -DMODPLUG_BUILD=1 \
 -DHAVE_SETENV \
 -DHAVE_SINF \
+-DHAVE_STDINT_H \
+-DHAVE_INTTYPES_H \
 -Wno-unused-but-set-variable
 
 #TODO:
@@ -378,12 +380,15 @@ xmlsave.c          \
 xmlmodule.c        \
 schematron.c
 
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
+LOCAL_C_INCLUDES += $(LOCAL_PATH) $(LOCAL_PATH)/include
 LOCAL_CFLAGS := -DLIBXML_THREAD_ENABLED=1         \
                 -Wno-missing-field-initializers   \
                 -Wno-self-assign                  \
                 -Wno-sign-compare                 \
-                -Wno-tautological-pointer-compare
+                -Wno-tautological-pointer-compare \
+                -Wno-error=incompatible-function-pointer-types \
+                -Wno-error=int-conversion \
+                -Wno-error=implicit-function-declaration
 LOCAL_MODULE := xml2
 include $(BUILD_STATIC_LIBRARY)
 
@@ -423,8 +428,8 @@ LOCAL_CFLAGS := \
 -DPIC \
 -DFF_API_AVPICTURE=1
 
-LOCAL_LDLIBS :=
-LOCAL_LDFLAGS := -Wl,--version-script=$(MY_DIR)/version_scripts/mxutil \
+LOCAL_LDLIBS := -lm -ldl -llog
+LOCAL_LDFLAGS := -Wl,--version-script=$(MY_DIR)/version_scripts/mxutil -Wl,--undefined-version -Wl,-z,max-page-size=16384
 
 
 #-L$(NDK_APP_DST_DIR)

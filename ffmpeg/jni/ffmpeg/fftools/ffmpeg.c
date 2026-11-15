@@ -341,7 +341,7 @@ void term_exit(void)
 
 static volatile int received_sigterm = 0;
 static volatile int received_nb_signals = 0;
-static atomic_int transcode_init_done = ATOMIC_VAR_INIT(0);
+static atomic_int transcode_init_done = 0;
 static volatile int ffmpeg_exited = 0;
 static int main_return_code = 0;
 

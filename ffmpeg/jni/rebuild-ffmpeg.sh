@@ -1,88 +1,77 @@
 #!/bin/bash
+set -o pipefail
 ROOT=$(cd "$(dirname "$0")"; pwd)
-source ${ROOT}/util.sh
-source ENV
+source "${ROOT}/ENV"
+source "${ROOT}/util.sh"
+
+cd "${ROOT}"
 
 log_file=rebuild-ffmpeg.log
-
-if [[ -e ${log_file} ]]
-then
-    rm ${log_file}
-fi
+rm -f "${log_file}"
 
 debug_flag=""
-for p in $*
-do
+for p in $*; do
   case "$p" in
     --debug )
       debug_flag="--debug"
       ;;
   esac
-  done
+done
 
-target=${1}
+target="${1}"
 DEFAULT_TARGETS=(neon arm64 x86 x86_64)
 
-#If no target or all is given, all the targets defined in DEFAULT_TARGETS will be built.
-if [[ -z ${target} || ${target} == 'all' ]]
-then
+if [[ -z "${target}" || "${target}" == 'all' ]]; then
     targets=(${DEFAULT_TARGETS[*]})
 else
-    #validate input target
-    for item in ${DEFAULT_TARGETS[*]}
-    do
-        if [[ ${target} == ${item} ]]
-        then
-            targets=(${target})
+    norm_target=$(normalize_arch "${target}")
+    for item in ${DEFAULT_TARGETS[*]} tegra2 tegra3; do
+        if [[ "${norm_target}" == "${item}" ]]; then
+            targets=("${norm_target}")
             break
         fi
     done
 
-    count=${#targets[@]}
-    if [[ ${count} -eq 0 ]]
-    then
-        die "Unsupported architecture."
+    if [[ ${#targets[@]} -eq 0 ]]; then
+        die "Unsupported architecture: ${target}"
     fi
 fi
 
-#build_target arch
 build_target(){
-    ./build-libmp3lame.sh $1
-    dieOnError
+    local arch="$1"
+    local dbg="$2"
 
-    ./build-openssl.sh $1
-    dieOnError
+    ./build-libmp3lame.sh "${arch}"
+    dieOnError "Failed to build libmp3lame for ${arch}"
 
-    ./build-libsmb2.sh $1
-    dieOnError
+    ./build-openssl.sh "${arch}"
+    dieOnError "Failed to build openssl for ${arch}"
 
-    ./build-libdav1d.sh $1
-    dieOnError
+    ./build-libsmb2.sh "${arch}"
+    dieOnError "Failed to build libsmb2 for ${arch}"
 
-    ./build.sh mxutil release build $1
-    dieOnError
+    ./build-libdav1d.sh "${arch}"
+    dieOnError "Failed to build libdav1d for ${arch}"
 
-if [[ -z ${SKIP_COPY} ]]
-then
-    echo "do not skip copy"
-    else
-    ./build.sh fribidi release build $1
-fi
+    ./build.sh mxutil release build "${arch}"
+    dieOnError "Failed to build mxutil for ${arch}"
 
-    ./build-ffmpeg.sh $1 $2
-    dieOnError
+    ./build.sh fribidi release build "${arch}"
+    dieOnError "Failed to build fribidi for ${arch}"
+
+    ./build-ffmpeg.sh "${arch}" ${dbg}
+    dieOnError "Failed to build ffmpeg for ${arch}"
 }
 
-#build all the requested targets sequentially
-for item in ${targets[*]}
-do
+for item in ${targets[*]}; do
     echo "Build ${item}"
-    build_target ${item} $debug_flag 2>&1 1>> ${log_file} | tee -a ${log_file}
-    if [[ -z ${SKIP_COPY} ]]
-    then
-    copy_target ${item} smb2 2>&1 1>> ${log_file} | tee -a ${log_file}
-    copy_target ${item} mp3lame 2>&1 1>> ${log_file} | tee -a ${log_file}
-    copy_target ${item} mxutil 2>&1 1>> ${log_file} | tee -a ${log_file}
-    copy_target ${item} c++_shared 2>&1 1>> ${log_file} | tee -a ${log_file}
+    build_target "${item}" "${debug_flag}" 2>&1 | tee -a "${log_file}"
+    dieOnError "Build failed for ${item}"
+    if [[ -z "${SKIP_COPY}" ]]; then
+        copy_target "${item}" smb2 2>&1 | tee -a "${log_file}"
+        copy_target "${item}" mp3lame 2>&1 | tee -a "${log_file}"
+        copy_target "${item}" mxutil 2>&1 | tee -a "${log_file}"
+        copy_target "${item}" fribidi 2>&1 | tee -a "${log_file}"
+        copy_target "${item}" c++_shared 2>&1 | tee -a "${log_file}"
     fi
 done

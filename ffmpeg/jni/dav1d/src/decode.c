@@ -2376,8 +2376,8 @@ static void setup_tile(Dav1dTileState *const ts,
         NULL;
 
     ts->frame_thread.cf = f->frame_thread.cf ?
-        (uint8_t*)f->frame_thread.cf +
-            (((size_t)tile_start_off * size_mul[0]) >> !f->seq_hdr->hbd) :
+        (void *)((uint8_t*)f->frame_thread.cf +
+            (((size_t)tile_start_off * size_mul[0]) >> !f->seq_hdr->hbd)) :
         NULL;
 
     dav1d_cdf_thread_copy(&ts->cdf, &f->in_cdf);
@@ -3211,8 +3211,8 @@ int dav1d_decode_frame(Dav1dFrameContext *const f) {
                     &f->frame_thread.pal_idx[tile_start_off * size_mul[1] / 4] :
                     NULL;
                 ts->frame_thread.cf = f->frame_thread.cf ?
-                    (uint8_t*)f->frame_thread.cf +
-                        ((tile_start_off * size_mul[0]) >> !f->seq_hdr->hbd) :
+                    (void *)((uint8_t*)f->frame_thread.cf +
+                        ((tile_start_off * size_mul[0]) >> !f->seq_hdr->hbd)) :
                     NULL;
                 if (f->n_tc > 0) {
                     const unsigned row_sb_start =

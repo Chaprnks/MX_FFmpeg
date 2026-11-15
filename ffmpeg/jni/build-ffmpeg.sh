@@ -1,63 +1,96 @@
 #!/bin/bash
 ROOT=$(cd "$(dirname "$0")"; pwd)
-source ${ROOT}/util.sh
+source "${ROOT}/ENV"
+source "${ROOT}/util.sh"
+
+cd "${ROOT}"
 
 build_type=release
 debug_flag=""
-for p in $*
-do
+for p in $*; do
   case "$p" in
     --debug )
       debug_flag="--debug"
       build_type=debug
       ;;
   esac
-  done
+done
 
-if test -t 1 && which tput >/dev/null 2>&1; then 
-    ncolors=$(tput colors)
-    if test -n "$ncolors" && test $ncolors -ge 8; then 
-        bold_color=$(tput bold)
-        warn_color=$(tput setaf 3)
-        error_color=$(tput setaf 1)
-        reset_color=$(tput sgr0)
-    fi   
-    # 72 used instead of 80 since that's the default of pr
-    ncols=$(tput cols)
-fi
-: ${ncols:=72}
-
-. ENV # Environment
-
-# if [ $1 == 'tegra3' ]
-# then
-# 	cd ffmpeg__1.7.39
-# else
- 	cd ffmpeg
-# fi
-
-# @see http://stackoverflow.com/questions/38145692/compiling-ffmpeg-3-1-1-for-x86-using-android-ndk
-make clean
-rm compat/strtod.d
-rm compat/strtod.o
-
-echo "=====================CONFIGURE FFMPEG FOR $1====================="
-make distclean
-../config-ffmpeg.sh $1 $debug_flag
-if test "$?" != 0; then 
-    die "ERROR: failed to configure ffmpeg for $1"
+FLAVOR=$(normalize_arch "$1")
+if test -z "${FLAVOR}"; then
+    die "No architecture specified. Valid architectures: armeabi-v7a (neon), arm64-v8a (arm64), x86, x86_64"
 fi
 
-make clean
-make -j$CPU_CORE
-cd ..
+DST_DIR=$(get_dst_dir "${FLAVOR}")
+ABI_DIR=$(get_abi_dir "${FLAVOR}")
 
-. build.sh ffmpeg.mx $build_type build $1
-if test "$?" != 0; then 
-    die "ERROR: failed to build ffmpeg for $1"
+# Ensure prerequisite libraries are built if missing (e.g., when build-ffmpeg.sh is called directly)
+if [ ! -f "${ROOT}/${DST_DIR}/libmp3lame.so" ]; then
+    echo "Building prerequisite libmp3lame for ${FLAVOR}..."
+    ./build-libmp3lame.sh "${FLAVOR}"
+    dieOnError "ERROR: failed to build libmp3lame for ${FLAVOR}"
 fi
 
-if [[ -z ${SKIP_MXUTIL} ]]
-then
-copy_target $1 ffmpeg.mx
+if [ ! -f "${ROOT}/${DST_DIR}/libssl.a" ] || [ ! -f "${ROOT}/openssl-1.0.2s/libssl.a" ]; then
+    echo "Building prerequisite openssl for ${FLAVOR}..."
+    ./build-openssl.sh "${FLAVOR}"
+    dieOnError "ERROR: failed to build openssl for ${FLAVOR}"
+else
+    cp -f "${ROOT}/${DST_DIR}/libssl.a" "${ROOT}/openssl-1.0.2s/" 2>/dev/null || true
+    cp -f "${ROOT}/${DST_DIR}/libcrypto.a" "${ROOT}/openssl-1.0.2s/" 2>/dev/null || true
+fi
+
+if [ ! -f "${ROOT}/${DST_DIR}/libsmb2.so" ]; then
+    echo "Building prerequisite libsmb2 for ${FLAVOR}..."
+    ./build-libsmb2.sh "${FLAVOR}"
+    dieOnError "ERROR: failed to build libsmb2 for ${FLAVOR}"
+fi
+
+if [ ! -f "${ROOT}/dav1d/builddir/${ABI_DIR}/src/libdav1d.a" ]; then
+    echo "Building prerequisite libdav1d for ${FLAVOR}..."
+    ./build-libdav1d.sh "${FLAVOR}"
+    dieOnError "ERROR: failed to build libdav1d for ${FLAVOR}"
+fi
+
+if [ ! -f "${ROOT}/${DST_DIR}/libmxutil.so" ]; then
+    echo "Building prerequisite mxutil for ${FLAVOR}..."
+    ./build.sh mxutil "${build_type}" build "${FLAVOR}"
+    dieOnError "ERROR: failed to build mxutil for ${FLAVOR}"
+fi
+
+if [ ! -f "${ROOT}/${DST_DIR}/libfribidi.so" ]; then
+    echo "Building prerequisite fribidi for ${FLAVOR}..."
+    ./build.sh fribidi "${build_type}" build "${FLAVOR}"
+    dieOnError "ERROR: failed to build fribidi for ${FLAVOR}"
+fi
+
+cd "${ROOT}/ffmpeg"
+
+make clean >/dev/null 2>&1 || true
+rm -f compat/strtod.d compat/strtod.o config.h config.asm
+
+echo "=====================CONFIGURE FFMPEG FOR ${FLAVOR}====================="
+make distclean >/dev/null 2>&1 || true
+../config-ffmpeg.sh "${FLAVOR}" $debug_flag
+if test "$?" != 0; then
+    die "ERROR: failed to configure ffmpeg for ${FLAVOR}"
+fi
+
+make clean >/dev/null 2>&1 || true
+make -j${CPU_CORE:-4}
+if test "$?" != 0; then
+    die "ERROR: failed to compile ffmpeg static libraries for ${FLAVOR}"
+fi
+cd "${ROOT}"
+
+./build.sh ffmpeg.mx "${build_type}" build "${FLAVOR}"
+if test "$?" != 0; then
+    die "ERROR: failed to link libffmpeg.mx.so for ${FLAVOR}"
+fi
+
+mkdir -p "${ROOT}/build/${ABI_DIR}"
+cp -f "${ROOT}/${DST_DIR}/"*.so "${ROOT}/build/${ABI_DIR}/" 2>/dev/null || true
+
+if [[ -z "${SKIP_MXUTIL}" ]]; then
+    copy_target "${FLAVOR}" ffmpeg.mx
 fi

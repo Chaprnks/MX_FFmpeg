@@ -1,2 +1,31 @@
-CPU_CORE="$(nproc --all)"
-NDK=/home/xda/android-ndk-r27c
+#!/bin/bash
+CPU_CORE="$(nproc --all 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)"
+export CPU_CORE
+
+if [ -z "${NDK}" ] || [ ! -d "${NDK}" ]; then
+    for candidate in \
+        "${ANDROID_NDK_HOME}" \
+        "${ANDROID_NDK_ROOT}" \
+        "${ANDROID_NDK}" \
+        "${ANDROID_NDK_LATEST_HOME}" \
+        "/home/xda/android-ndk-r27c"; do
+        if [ -n "${candidate}" ] && [ -d "${candidate}" ]; then
+            NDK="${candidate}"
+            break
+        fi
+    done
+fi
+
+if [ -z "${NDK}" ] || [ ! -d "${NDK}" ]; then
+    for sdk_root in "${ANDROID_HOME}" "${ANDROID_SDK_ROOT}" "/usr/local/lib/android/sdk" "${HOME}/Android/Sdk" "${HOME}/Library/Android/sdk"; do
+        if [ -n "${sdk_root}" ] && [ -d "${sdk_root}/ndk" ]; then
+            latest_ndk=$(ls -1d "${sdk_root}/ndk/"* 2>/dev/null | sort -V | tail -n 1)
+            if [ -n "${latest_ndk}" ] && [ -d "${latest_ndk}" ]; then
+                NDK="${latest_ndk}"
+                break
+            fi
+        fi
+    done
+fi
+
+export NDK

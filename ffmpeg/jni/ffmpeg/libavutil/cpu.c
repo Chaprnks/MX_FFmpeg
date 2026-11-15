@@ -47,7 +47,7 @@
 #include <unistd.h>
 #endif
 
-static atomic_int cpu_flags = ATOMIC_VAR_INIT(-1);
+static atomic_int cpu_flags = -1;
 
 static int get_cpu_flags(void)
 {

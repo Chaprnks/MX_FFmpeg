@@ -14,12 +14,8 @@
 # include "config.h"
 # define CONFIG_H_INCLUDED 1
 #endif
-#ifdef HAVE_INTTYPES_H
-# include <inttypes.h>
-#endif
-#ifdef HAVE_STDINT_H
-# include <stdint.h>
-#endif
+#include <inttypes.h>
+#include <stdint.h>
 
 /* disable AGC and FILESAVE for all targets for uniformity. */
 #define NO_AGC

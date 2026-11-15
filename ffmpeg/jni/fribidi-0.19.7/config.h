@@ -86,7 +86,11 @@
 #define SIZEOF_SHORT 2
 
 /* The size of `void *', as computed by sizeof. */
+#ifdef __LP64__
 #define SIZEOF_VOID_P 8
+#else
+#define SIZEOF_VOID_P 4
+#endif
 
 /* The size of `wchar_t', as computed by sizeof. */
 #define SIZEOF_WCHAR_T 4

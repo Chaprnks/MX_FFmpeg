@@ -1,4 +1,3 @@
-
 # common flags
 
 LOCAL_MODULE := $(NAME)
@@ -9,7 +8,6 @@ LOCAL_CFLAGS += \
 -march=$(ARCH) \
 -mfpmath=sse \
 -finline-functions
-
 
 ifeq ($(findstring clang, $(NDK_TOOLCHAIN_VERSION)),)
 	# GCC only.
@@ -25,9 +23,12 @@ ifeq ($(findstring clang, $(NDK_TOOLCHAIN_VERSION)),)
 else
 	# Clang only.
 	LOCAL_CFLAGS += \
-	-Wno-deprecated-register
+	-Wno-deprecated-register \
+	-Wno-error=incompatible-function-pointer-types \
+	-Wno-error=int-conversion \
+	-Wno-error=implicit-function-declaration \
+	-Wno-error=implicit-int
 endif
-
 
 ifeq ($(ARCH),atom)
 	LOCAL_CFLAGS += -msse3 -mssse3
@@ -35,11 +36,9 @@ else
 	LOCAL_CFLAGS += -msse2 -mno-sse3 -mno-ssse3
 endif
 
-
 ifeq ($(APP_OPTIM),debug)
 	LOCAL_CFLAGS += -DDEBUG
 endif
 
-LOCAL_CPPFLAGS += \
--Werror=return-type
-
+LOCAL_CPPFLAGS += -Werror=return-type
+LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384

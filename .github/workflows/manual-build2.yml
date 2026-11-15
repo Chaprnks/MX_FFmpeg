@@ -1,0 +1,146 @@
+name: Manual Codec Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      architectures:
+        description: 'Select architectures'
+        required: true
+        default: 'armeabi-v7a'
+        type: choice
+        options:
+          - 'armeabi-v7a'
+          - 'arm64-v8a'
+          - 'x86'
+          - 'x86_64'
+          - 'all'
+      clean_build:
+        description: 'Clean build (remove old artifacts)'
+        required: false
+        type: boolean
+        default: false
+      create_release:
+        description: 'Create GitHub release'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+env:
+  ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+  NDK_VERSION: 27.3.13750724
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: ${{ fromJson(inputs.architectures == 'all' && '["armeabi-v7a","arm64-v8a","x86","x86_64"]' || format('["{0}"]', inputs.architectures)) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            git \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            texinfo \
+            yasm \
+            nasm \
+            perl \
+            meson \
+            ninja-build \
+            cmake \
+            rsync \
+            zip \
+            unzip \
+            jq \
+            dos2unix
+
+      - name: Clean (optional)
+        if: ${{ inputs.clean_build }}
+        run: |
+          rm -rf ffmpeg/jni/build ffmpeg/jni/libs/arm* ffmpeg/jni/libs/x86*
+          echo "Cleaned old builds"
+
+      - name: Set NDK
+        run: |
+          NDK_PATH=""
+          if [ -d "$ANDROID_SDK_ROOT/ndk/$NDK_VERSION" ]; then
+            NDK_PATH="$ANDROID_SDK_ROOT/ndk/$NDK_VERSION"
+          elif [ -n "$ANDROID_NDK_LATEST_HOME" ] && [ -d "$ANDROID_NDK_LATEST_HOME" ]; then
+            NDK_PATH="$ANDROID_NDK_LATEST_HOME"
+          elif [ -n "$ANDROID_NDK_HOME" ] && [ -d "$ANDROID_NDK_HOME" ]; then
+            NDK_PATH="$ANDROID_NDK_HOME"
+          elif [ -n "$ANDROID_NDK_ROOT" ] && [ -d "$ANDROID_NDK_ROOT" ]; then
+            NDK_PATH="$ANDROID_NDK_ROOT"
+          fi
+
+          if [ -z "$NDK_PATH" ] || [ ! -d "$NDK_PATH" ]; then
+            echo "Installing Android NDK $NDK_VERSION..."
+            yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION" > /dev/null
+            NDK_PATH="$ANDROID_SDK_ROOT/ndk/$NDK_VERSION"
+          fi
+
+          mkdir -p ffmpeg/jni
+          cat > ffmpeg/jni/ENV << EOF
+          CPU_CORE="\$(nproc --all)"
+          NDK=${NDK_PATH}
+          export CPU_CORE NDK
+          EOF
+          echo "NDK=${NDK_PATH}" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_ROOT=${NDK_PATH}" >> "$GITHUB_ENV"
+
+      - name: Build
+        run: |
+          cd ffmpeg/jni
+          find . -type f \( -name "*.sh" -o -name "configure" -o -name "Configure" -o -name "bootstrap" -o -name "config.guess" -o -name "config.sub" -o -name "compile" -o -name "depcomp" -o -name "install-sh" -o -name "missing" \) -exec chmod +x {} +
+          chmod +x ENV openssl-1.0.2s/util/* 2>/dev/null || true
+          ./rebuild-ffmpeg.sh "${{ matrix.arch }}"
+
+      - name: Upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-manual-${{ matrix.arch }}
+          path: ffmpeg/jni/build/${{ matrix.arch }}
+          retention-days: 30
+
+  release:
+    needs: build
+    if: ${{ inputs.create_release }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: release-assets
+          pattern: build-manual-*
+          merge-multiple: false
+
+      - name: Package release archives
+        run: |
+          mkdir -p dist
+          for dir in release-assets/build-manual-*; do
+            if [ -d "$dir" ]; then
+              arch_name=$(basename "$dir")
+              tar -czf "dist/${arch_name}.tar.gz" -C "$dir" .
+            fi
+          done
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: manual-${{ github.run_number }}
+          name: Manual Codec Build #${{ github.run_number }}
+          files: dist/*.tar.gz
+          generate_release_notes: true

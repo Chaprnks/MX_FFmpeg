@@ -1,2 +1,0 @@
-libsmb2_la-compat.lo: compat.c compat.h
-compat.h:

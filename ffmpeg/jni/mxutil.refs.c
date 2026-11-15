@@ -13,29 +13,23 @@ void speex_bits_remaining();
 void speex_bits_read_from();
 void speex_decode_int();
 void speex_bits_peek_unsigned();
+void speex_decoder_ctl();
 void speex_decode_stereo_int();
 void speex_packet_to_header();
 void speex_header_free();
 void speex_lib_get_mode();
-void iconv_connect();
+void speex_bits_init();
+void speex_decoder_init();
+void speex_std_stereo_request_handler();
+extern const void * const speex_nb_mode;
+void dvdsub2_uninit();
+void dvdsub2_init();
+void dvdsub2_guess_palette();
 void iconv();
 void iconv_open();
 void iconv_close();
-// void vbi_classify_page();
-// void vbi_decode();
-// void vbi_decoder_delete();
-// void vbi_decoder_new();
-// void vbi_draw_vt_page_region();
-// void vbi_event_handler_add();
-// void vbi_export_errstr();
-// void vbi_export_new();
-// void vbi_export_stdio();
-// void vbi_fetch_vt_page();
-// void vbi_print_page_region();
-// void vbi_unref_page();
-// void vbi_version();
-// void vbi_event_handler_register();
-// void vbi_teletext_set_default_region();
+void iconv_connect();
+void isort();
 void ModPlug_GetCurrentSpeed();
 void ModPlug_GetCurrentTempo();
 void ModPlug_GetCurrentOrder();
@@ -56,8 +50,6 @@ void ModPlug_Seek();
 void ModPlug_SetSettings();
 void ModPlug_Read();
 void ModPlug_Unload();
-
-//added for ssl & crypto
 void SSL_library_init();
 void SSL_load_error_strings();
 void SSL_shutdown();
@@ -110,8 +102,6 @@ void BIO_clear_flags();
 void BIO_set_flags();
 void ERR_get_error();
 void ERR_error_string();
-
-//added for libxml2
 void xmlCheckVersion();
 void xmlNodeGetContent();
 void xmlFree();
@@ -126,40 +116,6 @@ void xmlFreeNode();
 void xmlNewNode();
 void xmlCopyNode();
 void xmlNodeSetContent();
-
-//added for libsmb2
-void smb2_init_context();
-void smb2_destroy_context();
-void smb2_parse_url();
-void smb2_destroy_url();
-void smb2_set_user();
-void smb2_set_password();
-void smb2_set_domain();
-void smb2_set_security_mode();
-void smb2_connect_share_async();
-void smb2_disconnect_share_async();
-void smb2_get_error();
-void smb2_open_async();
-void smb2_fstat_async();
-void smb2_stat_async();
-void smb2_get_max_read_size();
-void smb2_lseek();
-void smb2_read_async();
-void smb2_write_async();
-void smb2_close_async();
-void smb2_opendir_async();
-void smb2_readdir();
-void smb2_rmdir_async();
-void smb2_closedir();
-void smb2_unlink_async();
-void smb2_rename_async();
-void smb2_get_fd();
-void smb2_which_events();
-void smb2_service();
-void smb2_share_enum_async();
-void smb2_free_data();
-
-//added for dav1d
 void dav1d_version();
 void dav1d_default_settings();
 void dav1d_open();
@@ -171,8 +127,6 @@ void dav1d_send_data();
 void dav1d_get_picture();
 void dav1d_picture_unref();
 void dav1d_close();
-
-//added for mxv
 void mxv_demuxer_connect();
 void mxv_probe();
 void mxv_read_header();
@@ -180,61 +134,35 @@ void mxv_read_packet();
 void mxv_read_seek();
 void mxv_read_close();
 void mxv_muxer_connect();
-int mxv_init();
-int mxv_write_header();
-int mxv_write_flush_packet();
-int mxv_write_trailer();
-int mxv_query_codec();
-int mxv_check_bitstream();
-
-// added for mxd
+void mxv_init();
+void mxv_write_header();
+void mxv_write_flush_packet();
+void mxv_write_trailer();
+void mxv_query_codec();
+void mxv_check_bitstream();
 void mxd_connect();
 void mxd_read_probe();
 void mxd_read_header();
 void mxd_read_packet();
 void mxd_read_seek();
 void mxd_read_close();
+void usb_connect();
+void usb_open();
+void usb_read();
+void usb_write();
+void usb_seek();
+void usb_close();
+void usb_delete();
+void usb_move();
+void usb_open_dir();
+void usb_read_dir();
+void usb_close_dir();
+void download_http_connect();
+void download_http_open();
+void download_http_close();
 
-// extern const uint8_t _vbi_bit_reverse[256];
-// extern const int8_t	_vbi_hamm8_inv [256];
-// extern const uint8_t _vbi_hamm8_fwd [16];
-
-
-void lame_init();
-void lame_set_num_channels();
-void lame_set_mode();
-void lame_set_in_samplerate();
-void lame_set_out_samplerate();
-void lame_set_quality();
-void lame_set_VBR();
-void lame_set_VBR_mean_bitrate_kbps();
-void lame_set_VBR_quality();
-void lame_set_lowpassfreq();
-void lame_set_bWriteVbrTag();
-void lame_set_disable_reservoir();
-void lame_init_params();
-void lame_get_encoder_delay();
-void lame_get_framesize();
-void lame_set_brate();
-void lame_encode_buffer();
-void lame_encode_flush();
-void lame_encode_buffer_int();
-void lame_encode_buffer_float();
-void lame_close();
-
-// Dummy function to export functions from static libraries.
-
-void dummy_main()
+void *dummy_main(void)
 {
-    // if( _vbi_bit_reverse[0] == 1 )
-    //     return;
-
-    // if ( _vbi_hamm8_inv[0] == 0x01 )
-    //     return;
-
-    // if ( _vbi_hamm8_fwd[0] == 0x15 )
-    //     return;
-
     opus_multistream_decoder_ctl();
     opus_multistream_decoder_destroy();
     opus_multistream_decode_float();
@@ -248,29 +176,22 @@ void dummy_main()
     speex_bits_read_from();
     speex_decode_int();
     speex_bits_peek_unsigned();
+    speex_decoder_ctl();
     speex_decode_stereo_int();
     speex_packet_to_header();
     speex_header_free();
     speex_lib_get_mode();
-    iconv_connect();
+    speex_bits_init();
+    speex_decoder_init();
+    speex_std_stereo_request_handler();
+    dvdsub2_uninit();
+    dvdsub2_init();
+    dvdsub2_guess_palette();
     iconv();
     iconv_open();
     iconv_close();
-    // vbi_classify_page();
-    // vbi_decode();
-    // vbi_decoder_delete();
-    // vbi_decoder_new();
-    // vbi_draw_vt_page_region();
-    // vbi_event_handler_add();
-    // vbi_export_errstr();
-    // vbi_export_new();
-    // vbi_export_stdio();
-    // vbi_fetch_vt_page();
-    // vbi_print_page_region();
-    // vbi_unref_page();
-    // vbi_version();
-    // vbi_event_handler_register();
-    // vbi_teletext_set_default_region();
+    iconv_connect();
+    isort();
     ModPlug_GetCurrentSpeed();
     ModPlug_GetCurrentTempo();
     ModPlug_GetCurrentOrder();
@@ -291,8 +212,6 @@ void dummy_main()
     ModPlug_SetSettings();
     ModPlug_Read();
     ModPlug_Unload();
-
-    //added for ssl & crypto
     SSL_library_init();
     SSL_load_error_strings();
     SSL_shutdown();
@@ -345,8 +264,6 @@ void dummy_main()
     BIO_set_flags();
     ERR_get_error();
     ERR_error_string();
-
-    //added for libxml2
     xmlCheckVersion();
     xmlNodeGetContent();
     xmlFree();
@@ -361,40 +278,6 @@ void dummy_main()
     xmlNewNode();
     xmlCopyNode();
     xmlNodeSetContent();
-
-    //added for libsmb2
-    smb2_init_context();
-    smb2_destroy_context();
-    smb2_parse_url();
-    smb2_destroy_url();
-    smb2_set_user();
-    smb2_set_password();
-    smb2_set_domain();
-    smb2_set_security_mode();
-    smb2_connect_share_async();
-    smb2_disconnect_share_async();
-    smb2_get_error();
-    smb2_open_async();
-    smb2_fstat_async();
-    smb2_stat_async();
-    smb2_get_max_read_size();
-    smb2_lseek();
-    smb2_read_async();
-    smb2_write_async();
-    smb2_close_async();
-    smb2_opendir_async();
-    smb2_readdir();
-    smb2_rmdir_async();
-    smb2_closedir();
-    smb2_unlink_async();
-    smb2_rename_async();
-    smb2_get_fd();
-    smb2_which_events();
-    smb2_service();
-    smb2_share_enum_async();
-    smb2_free_data();
-
-    //added for libdav1d
     dav1d_version();
     dav1d_default_settings();
     dav1d_open();
@@ -406,8 +289,6 @@ void dummy_main()
     dav1d_get_picture();
     dav1d_picture_unref();
     dav1d_close();
-
-    //added for mxv
     mxv_demuxer_connect();
     mxv_probe();
     mxv_read_header();
@@ -421,34 +302,25 @@ void dummy_main()
     mxv_write_trailer();
     mxv_query_codec();
     mxv_check_bitstream();
-
     mxd_connect();
     mxd_read_probe();
     mxd_read_header();
     mxd_read_packet();
     mxd_read_seek();
     mxd_read_close();
-
-    //libmp3lame
-    lame_init();
-    lame_set_num_channels();
-    lame_set_mode();
-    lame_set_in_samplerate();
-    lame_set_out_samplerate();
-    lame_set_quality();
-    lame_set_VBR();
-    lame_set_VBR_mean_bitrate_kbps();
-    lame_set_VBR_quality();
-    lame_set_lowpassfreq();
-    lame_set_bWriteVbrTag();
-    lame_set_disable_reservoir();
-    lame_init_params();
-    lame_get_encoder_delay();
-    lame_get_framesize();
-    lame_set_brate();
-    lame_encode_buffer();
-    lame_encode_flush();
-    lame_encode_buffer_int();
-    lame_encode_buffer_float();
-    lame_close();
+    usb_connect();
+    usb_open();
+    usb_read();
+    usb_write();
+    usb_seek();
+    usb_close();
+    usb_delete();
+    usb_move();
+    usb_open_dir();
+    usb_read_dir();
+    usb_close_dir();
+    download_http_connect();
+    download_http_open();
+    download_http_close();
+    return (void *)&speex_nb_mode;
 }

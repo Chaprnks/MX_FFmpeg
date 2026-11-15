@@ -1,2 +1,0 @@
-libsmb2_la-krb5-wrapper.lo: krb5-wrapper.c ../config.h
-../config.h:
