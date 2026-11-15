@@ -88,7 +88,7 @@ jobs:
 
       - name: Upload build artifacts
         if: success()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v7
         with:
           name: build-${{ matrix.arch }}
           path: ffmpeg/jni/build
@@ -96,7 +96,7 @@ jobs:
 
       - name: Upload build logs on failure
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v7
         with:
           name: build-logs-${{ matrix.arch }}
           path: ffmpeg/jni/build-*.log
@@ -112,7 +112,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v7
         with:
           path: artifacts
 
@@ -139,7 +139,7 @@ jobs:
           sha256sum mx-ffmpeg-codec-${{ github.run_id }}.zip > mx-ffmpeg-codec-${{ github.run_id }}.zip.sha256
 
       - name: Upload package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v7
         with:
           name: mx-ffmpeg-codec-package
           path: |
@@ -159,7 +159,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download package
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v7
         with:
           name: mx-ffmpeg-codec-package
 
